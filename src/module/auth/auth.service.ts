@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../../prisma/prisma.service';
+const saltRound = 10;
 
 @Injectable()
 export class AuthService {
@@ -21,5 +22,19 @@ export class AuthService {
     const { password: _, ...safeUser } = user;
 
     return safeUser;
+  }
+
+  async registerUser(email:string,password:string ,name:string){
+    const salt = await bcrypt.genSalt(saltRound);
+    const hashPassword = await bcrypt.hash(password ,salt)
+
+    await this.prisma.user.create({
+      data:{
+        email,
+        password:hashPassword,
+        name
+      }
+    })
+
   }
 }
