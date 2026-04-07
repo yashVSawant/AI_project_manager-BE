@@ -5,7 +5,7 @@ import { AiModule } from './module/ai/ai.module';
 import { ConfigModule } from '@nestjs/config';
 import { PassportModule } from '@nestjs/passport';
 import { AuthModule } from './module/auth/auth.module';
-import { PrismaModule } from './core/prisma/prisma.module';
+import { PrismaModule } from './prisma/prisma.module';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthenticatedGuard } from './module/auth/guards/session-auth.guard';
 

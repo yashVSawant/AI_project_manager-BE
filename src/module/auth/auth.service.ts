@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
-import { PrismaService } from 'src/core/prisma/prisma.service';
+import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class AuthService {
@@ -11,11 +11,11 @@ export class AuthService {
       where: { email },
     });
 
-    if (!user) return null;
+    if (!user) throw new BadRequestException('User not found!');
 
     const isMatch = await bcrypt.compare(password, user.password);
 
-    if (!isMatch) return null;
+    if (!isMatch)  throw new BadRequestException('Incorrect password!');
 
     // ❗ Never return password
     const { password: _, ...safeUser } = user;

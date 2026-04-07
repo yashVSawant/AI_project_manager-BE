@@ -45,7 +45,6 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         typeof message === 'string'
           ? message
           : message?.message || 'Something went wrong',
-      path: request.url,
     });
   }
 }
