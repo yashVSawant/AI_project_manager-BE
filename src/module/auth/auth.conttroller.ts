@@ -1,18 +1,17 @@
-import { Controller, Post, UseGuards, Req, Body } from '@nestjs/common';
+import { Controller, Post, UseGuards, Req, Body, Session, Get } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Public } from './decorators/public.decorator';
 import { AuthService } from './auth.service';
 
-@Public() // ✅ make all routes in this controller public by default
+// @Public() // ✅ make all routes in this controller public by default
 @Controller('auth')
 export class AuthController {
   constructor(private readonly userService: AuthService){}
   
   @Post('login')
-  login(@Body() {email , password}:{email:string , password:string} ,@Req() req:any) {
-    const user =  this.userService.validateUser(email ,password)
-    req.session.user = user;
-    return 'Login successfully!'
+  async login(@Body() {email , password}:{email:string , password:string} ,@Req() req:any,@Session() session:any) {
+    const user = await this.userService.validateUser(email, password);
+    return this.userService.login(user);
   }
 
   @Post('signup')
@@ -20,9 +19,11 @@ export class AuthController {
     return this.userService.registerUser(email , password, name)
   }
 
-  @Post('logout')
-  logout(@Req() req: any) {
-    req.session.destroy(() => {});
-    return { message: 'Logged out' };
-  }
+  @Post('me')
+    me(@Req() req:any){
+      console.log("reqest", req.headers['authorization'])
+      return "this is user"
+    }
+  
+  
 }
