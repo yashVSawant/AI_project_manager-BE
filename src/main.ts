@@ -11,6 +11,11 @@ import {  JwtAuthGuard } from './module/auth/guards/jwt-auth.guard';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  app.enableCors({
+  origin: true, // ✅ allow all (dev)
+  credentials: true,
+});
+
   // ✅ Middlewares
   app.use(new LoggingMiddleware().use.bind(new LoggingMiddleware()));
 
