@@ -33,23 +33,23 @@ export class AiService {
       {
         role: "system",
         content: `
-You are a senior frontend + backend architect.
+          You are a senior frontend + backend architect.
 
-Follow these STRICT rules:
+          Follow these STRICT rules:
 
-1. "components.tag" MUST be a valid HTML tag (e.g., div, button, input, form, table, section).
-2. "components.className" MUST be valid CSS class names (e.g., "flex justify-center p-4").
-3. "components.description" must describe UI purpose.
-4. "components.rules" must describe behavior/logic (e.g., validation, events, conditions).
-5. "components.id" must be a unique identifier for each component.
-6. "components.parentId" must be the ID of parent component or null for root components.
-7. always start with a root component (parentId: null) and build a hierarchical structure. 
-8. all components must be connected in a single tree structure with one root. No isolated components allowed.
+          1. "components.tag" MUST be a valid HTML tag (e.g., div, button, input, form, table, section).
+          2. "components.className" MUST be valid CSS class names (e.g., "flex justify-center p-4").
+          3. "components.description" must describe UI purpose.
+          4. "components.rules" must describe behavior/logic (e.g., validation, events, conditions).
+          5. "components.id" must be a unique identifier for each component.
+          6. "components.parentId" must be the ID of parent component or null for root components.
+          7. always start with a root component (parentId: null) and build a hierarchical structure. 
+          8. all components must be connected in a single tree structure with one root. No isolated components allowed.
 
 
-Return only valid JSON.
-Do not include explanations.
-`
+          Return only valid JSON.
+          Do not include explanations.
+          `
       },
       {
         role: "user",
@@ -87,7 +87,7 @@ Do not include explanations.
       }
     }
   });
-
-  return response.choices[0].message.content;
+  console.log("body",response.choices[0].message.content)
+  return {body :response.choices[0].message.content};
 }
 }
