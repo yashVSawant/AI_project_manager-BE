@@ -7,16 +7,16 @@ import { PassportModule } from '@nestjs/passport';
 import { AuthModule } from './module/auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { APP_GUARD } from '@nestjs/core';
-import { AuthenticatedGuard } from './module/auth/guards/session-auth.guard';
+import { JwtAuthGuard } from './module/auth/guards/jwt-auth.guard';
 
 @Module({
   imports: [ConfigModule.forRoot({
-      isGlobal: true, // 👈 makes env available everywhere
+      isGlobal: true, 
     }),PassportModule.register({ session: true }),PrismaModule,AuthModule,AiModule],
   controllers: [AppController],
   providers: [AppService,{
       provide: APP_GUARD,
-      useClass: AuthenticatedGuard, // 👈 This makes it run on EVERY route automatically
+      useClass: JwtAuthGuard, // 👈 This makes it run on EVERY route automatically
     },],
 })
 export class AppModule {}

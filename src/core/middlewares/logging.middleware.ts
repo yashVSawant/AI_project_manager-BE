@@ -10,7 +10,7 @@ export class LoggingMiddleware implements NestMiddleware {
     let requestStartTime: Date = new Date();
 
     this.logger.log(
-      `📡 ${method} ${originalUrl} {time: ${requestStartTime.toISOString()}}`,
+      `📡 ${method} ${originalUrl} {time: ${requestStartTime.toISOString()}} ,${req.headers['authorization']}`,
     );
 
     next();
