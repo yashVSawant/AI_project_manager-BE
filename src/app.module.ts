@@ -8,11 +8,12 @@ import { AuthModule } from './module/auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './module/auth/guards/jwt-auth.guard';
+import { ProjectModule } from './module/project/project.module';
 
 @Module({
   imports: [ConfigModule.forRoot({
       isGlobal: true, 
-    }),PassportModule.register({ session: true }),PrismaModule,AuthModule,AiModule],
+    }),PassportModule.register({ session: true }),PrismaModule,AuthModule,AiModule,ProjectModule],
   controllers: [AppController],
   providers: [AppService,{
       provide: APP_GUARD,

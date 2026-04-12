@@ -5,7 +5,7 @@ import { AuthService } from './auth.service';
 import { loginDto } from './dto/login.dto';
 import { signupDto } from './dto/signup.dto';
 
-// @Public() // ✅ make all routes in this controller public by default
+@Public() // ✅ make all routes in this controller public by default
 @Controller('auth')
 export class AuthController {
   constructor(private readonly userService: AuthService){}
