@@ -8,6 +8,7 @@ import { ComponentConditionDto, conditionDto } from "./dto/condition.dto";
 import { AiService } from "../ai/ai.service";
 import { v4 as uuid } from "uuid";
 import { BadRequestError } from "openai";
+import { text } from "node:stream/consumers";
 
 @Injectable()
 export class ProjectService {
@@ -19,6 +20,7 @@ export class ProjectService {
 async generateProject(input:string , userId:string){
     if(!userId) throw new BadRequestException("userId is required!")
         const aiData = await this.aiService.generateProject(input, userId);
+      console.log(aiData);
 return await this.prisma.$transaction(async (tx) => {
     // ✅ 1. Create Project
     const project = await this.createProject({
@@ -26,14 +28,6 @@ return await this.prisma.$transaction(async (tx) => {
         description: aiData.description,
       },
     userId,tx)
-    // const project = await tx.project.create({
-    //   data: {
-    //     name: aiData.projectName,
-    //     description: aiData.description,
-    //     userId,
-    //     createdById: userId
-    //   }
-    // });
 
     // ✅ 2. Build ID Maps
     const componentMap = new Map<string, string>();
@@ -49,50 +43,35 @@ return await this.prisma.$transaction(async (tx) => {
 
     // ✅ 3. Insert Components
     await this.createComponents(aiData.components.map((c) => ({
+      ...c,
         id: componentMap.get(c.id),
         type: c.tag,
         className: c.className,
         description: c.description,
         parentId: c.parentId ? componentMap.get(c.parentId) : null,
+        text: c.text,
+        rules:c.rules,
+        onActiveComponentId:c.onActiveComponentId,
+        activeClassName:c.activeClassName,
       })),project.id , userId,tx)
-    // await tx.component.createMany({
-      // data: aiData.components.map((c) => ({
-      //   id: componentMap.get(c.id),
-      //   type: c.tag,
-      //   className: c.className,
-      //   description: c.description,
-      //   parentId: c.parentId ? componentMap.get(c.parentId) : null,
-      //   projectId: project.id,
-      //   createdById: userId
-      // }))
-    // });
+    
 
     // ✅ 4. Insert Conditions
     await this.createConditions((aiData.conditions || []).map((c) => ({
+      ...c,
         id: conditionMap.get(c.id),
         rule: c.rule,
       })) ,project.id,tx)
-    // await tx.condition.createMany({
-    //   data: (aiData.conditions || []).map((c) => ({
-    //     id: conditionMap.get(c.id),
-    //     rule: c.rule,
-    //     projectId: project.id
-    //   }))
-    // });
+    
 
     // ✅ 5. Insert ComponentConditions
     await this.createComponentCondition((aiData.componentConditions || []).map((cc) => ({
+      ...cc,
         conditionId: conditionMap.get(cc.conditionId),
         componentId: componentMap.get(cc.componentId),
         action: cc.action
       })),tx)
-    // await tx.componentCondition.createMany({
-    //   data: (aiData.componentConditions || []).map((cc) => ({
-    //     conditionId: conditionMap.get(cc.conditionId),
-    //     componentId: componentMap.get(cc.componentId),
-    //     action: cc.action
-    //   }))
-    // });
+    
 
     return {
       projectId: project.id,
@@ -133,7 +112,8 @@ async createComponents(
       onActiveComponentId: c.onActiveComponentId,
       activeClassName: c.activeClassName,
       createdById: userId,
-      createdAt: time
+      createdAt: time,
+      order:c.order
     }))
   });
 }
@@ -167,7 +147,8 @@ async getProject(projectId: string) {
               condition: true
             }
           }
-        }
+        },
+        orderBy:{order:"asc"}
       },
       conditions: true
     }
@@ -182,6 +163,7 @@ async getProject(projectId: string) {
 
   project.components.forEach((comp) => {
     componentMap.set(comp.id, {
+      ...comp,
       id: comp.id,
       type: comp.type,
       className: comp.className,
@@ -217,5 +199,13 @@ async getProject(projectId: string) {
     description: project.description,
     components: tree
   };
+}
+
+async getProjects(userId:string){
+  return this.prisma.project.findMany({
+    where:{
+      userId
+    }
+  })
 }
 }

@@ -8,7 +8,6 @@ export class ProjectController {
 
   @Post("generate")
   async generate(@Body() dto: GenerateProjectDto , @Req() req) {
-    console.log("request", req.user)
     return this.projectService.generateProject(dto.message , req.user.userId);
   }
 
@@ -17,6 +16,11 @@ export class ProjectController {
     if(!id) throw new BadRequestException("id is required!")
     return this.projectService.getProject(id)
 
+  }
+
+  @Get()
+  async getProjects(@Req() req:any){
+    return this.projectService.getProjects(req.user.userId)
   }
 
 }

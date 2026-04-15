@@ -71,6 +71,7 @@ model Component {
   projectId   String    @map("project_id")  
   onActiveComponentId   String?  @map("on_active_component_id")
   activeClassName   String? @map("active_class_name")
+  order       Int  @default(0)
 
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime? @map("updated_at")
@@ -92,7 +93,6 @@ model Component {
 
   componentConditions ComponentCondition[]
   
-
   @@map("component")
 }
 
