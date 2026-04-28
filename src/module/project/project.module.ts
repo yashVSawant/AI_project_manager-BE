@@ -4,8 +4,8 @@ import { ProjectController } from './project.controller';
 import { AiModule } from '../ai/ai.module';
 
 @Module({
-    imports: [AiModule],
-    controllers:[ProjectController],
+  imports: [AiModule],
+  controllers: [ProjectController],
   providers: [ProjectService],
 })
 export class ProjectModule {}

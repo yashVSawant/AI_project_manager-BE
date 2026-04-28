@@ -11,13 +11,23 @@ import { JwtAuthGuard } from './module/auth/guards/jwt-auth.guard';
 import { ProjectModule } from './module/project/project.module';
 
 @Module({
-  imports: [ConfigModule.forRoot({
-      isGlobal: true, 
-    }),PassportModule.register({ session: true }),PrismaModule,AuthModule,AiModule,ProjectModule],
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    PassportModule.register({ session: true }),
+    PrismaModule,
+    AuthModule,
+    AiModule,
+    ProjectModule,
+  ],
   controllers: [AppController],
-  providers: [AppService,{
+  providers: [
+    AppService,
+    {
       provide: APP_GUARD,
       useClass: JwtAuthGuard, // 👈 This makes it run on EVERY route automatically
-    },],
+    },
+  ],
 })
 export class AppModule {}

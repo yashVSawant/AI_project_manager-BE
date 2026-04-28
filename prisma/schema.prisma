@@ -31,6 +31,8 @@ model User {
   componentsCreated Component[] @relation("ComponentCreatedBy")
   componentsUpdated Component[] @relation("ComponentUpdatedBy")
 
+  projectMember ProjectMember[]
+
   @@map("user")
 }
 
@@ -56,6 +58,7 @@ model Project {
   components  Component[]
   messages    Message[]
   conditions   Condition[]
+  projectMember ProjectMember[]
 
   @@map("project")
 }
@@ -75,6 +78,7 @@ model Component {
 
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime? @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
 
   // Audit fields
   createdById String?   @map("created_by_id")
@@ -138,4 +142,27 @@ model ComponentCondition {
   component    Component  @relation(fields: [componentId], references: [id], onDelete: Cascade)
 
   @@map("component_condition")
+}
+
+enum ProjectRole {
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
+model ProjectMember {
+  id        String   @id @default(uuid())
+
+  projectId String   @map("project_id")
+  userId    String   @map("user_id")
+
+  role      ProjectRole
+
+  createdAt DateTime @default(now())
+
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@map("project_members")
 }

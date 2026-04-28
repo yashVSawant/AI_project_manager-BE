@@ -1,10 +1,15 @@
-import { IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID } from "class-validator";
+import {
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUUID,
+} from 'class-validator';
 
 export class ComponentDto {
-
-    @IsOptional()
-    @IsUUID()
-    id?:string
+  @IsOptional()
+  @IsUUID()
+  id?: string;
 
   @IsString()
   type: string;
@@ -38,5 +43,5 @@ export class ComponentDto {
 
   @IsNumber()
   @IsNotEmpty()
-  order:number
+  order: number;
 }
