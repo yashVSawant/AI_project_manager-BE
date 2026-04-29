@@ -7,8 +7,8 @@ const saltRound = 10;
 @Injectable()
 export class AuthService {
   constructor(
-    private prisma: PrismaService ,
-    private jwtService: JwtService
+    private prisma: PrismaService,
+    private jwtService: JwtService,
   ) {}
 
   async validateUser(email: string, password: string) {
@@ -27,21 +27,33 @@ export class AuthService {
     const payload = { userId: user.id, email: user.email };
 
     return {
-      access_token: this.jwtService.sign(payload),
+      access_token: this.jwtService.sign(payload, {
+        secret: process.env.SECRET_TOKEN_KEY,
+        expiresIn: '24h',
+      }),
     };
   }
 
-  async registerUser(email:string,password:string ,name:string){
+  async registerUser(email: string, password: string, name: string) {
     const salt = await bcrypt.genSalt(saltRound);
-    const hashPassword = await bcrypt.hash(password ,salt)
+    const hashPassword = await bcrypt.hash(password, salt);
 
-    await this.prisma.user.create({
-      data:{
+   const user = await this.prisma.user.create({
+      data: {
         email,
-        password:hashPassword,
-        name
+        password: hashPassword,
+        name,
+      },
+    });
+    return this.login(user)
+  }
+
+  async checkUserExist(email:string){
+    const user  = await this.prisma.user.findUnique({
+      where:{
+        email
       }
     })
-
+    return Boolean(user)
   }
 }

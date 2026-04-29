@@ -31,6 +31,8 @@ model User {
   componentsCreated Component[] @relation("ComponentCreatedBy")
   componentsUpdated Component[] @relation("ComponentUpdatedBy")
 
+  projectMember ProjectMember[]
+
   @@map("user")
 }
 
@@ -38,9 +40,9 @@ model Project {
   id          String   @id @default(uuid())
   userId      String   @map("user_id")
   name        String
-  description String
-  aiOutput    String?
+  description String?
   status      String   @default("generated")
+  deletedAt   DateTime?      @map("deleted_at")
   createdAt   DateTime @default(now()) @map("created_at")
 
   // Owner
@@ -55,6 +57,8 @@ model Project {
 
   components  Component[]
   messages    Message[]
+  conditions   Condition[]
+  projectMember ProjectMember[]
 
   @@map("project")
 }
@@ -62,15 +66,19 @@ model Project {
 model Component {
   id          String    @id @default(uuid())
   type        String
-  text        String
-  rules       String
+  text        String?
+  rules       String?
   className   String    @map("class_name")
-  description String
+  description String?
   parentId    String?   @map("parent_id")
   projectId   String    @map("project_id")  
+  onActiveComponentId   String?  @map("on_active_component_id")
+  activeClassName   String? @map("active_class_name")
+  order       Int  @default(0)
 
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime? @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
 
   // Audit fields
   createdById String?   @map("created_by_id")
@@ -83,7 +91,12 @@ model Component {
   project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
   parent      Component? @relation("ComponentParent", fields: [parentId], references: [id])
   children    Component[] @relation("ComponentParent")
+  activeDependency Component? @relation("ComponentActive", fields: [onActiveComponentId], references: [id])
 
+  dependentComponents Component[] @relation("ComponentActive")
+
+  componentConditions ComponentCondition[]
+  
   @@map("component")
 }
 
@@ -99,4 +112,57 @@ model Message {
   project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@map("message")
+}
+
+model Condition {
+  id String @id @default(uuid())
+  rule String 
+  projectId String  @map("project_id")
+
+  // Relations
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade) 
+
+  componentConditions ComponentCondition[]
+
+  @@map("condition")
+}
+
+enum ConditionAction {
+  HIDDEN
+  DISABLED
+}
+
+model ComponentCondition {
+  id String @id @default(uuid())
+  action ConditionAction
+  conditionId String @map("condition_id")
+  componentId String @map("component_id")
+
+  condition    Condition  @relation(fields: [conditionId], references: [id], onDelete: Cascade) 
+  component    Component  @relation(fields: [componentId], references: [id], onDelete: Cascade)
+
+  @@map("component_condition")
+}
+
+enum ProjectRole {
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
+model ProjectMember {
+  id        String   @id @default(uuid())
+
+  projectId String   @map("project_id")
+  userId    String   @map("user_id")
+
+  role      ProjectRole
+
+  createdAt DateTime @default(now())
+
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@map("project_members")
 }
