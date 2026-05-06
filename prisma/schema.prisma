@@ -30,6 +30,8 @@ model User {
   projectsUpdated   Project[]   @relation("ProjectUpdatedBy")
   componentsCreated Component[] @relation("ComponentCreatedBy")
   componentsUpdated Component[] @relation("ComponentUpdatedBy")
+  invitedBy     ProjectInvite[]   @relation("InvitedById")
+  invitedUser   ProjectInvite[]      @relation("InvitedUser")
 
   projectMember ProjectMember[]
 
@@ -59,6 +61,7 @@ model Project {
   messages    Message[]
   conditions   Condition[]
   projectMember ProjectMember[]
+  projectInvite ProjectInvite[]
 
   @@map("project")
 }
@@ -165,4 +168,37 @@ model ProjectMember {
 
   @@unique([projectId, userId])
   @@map("project_members")
+}
+
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  REJECTED
+}
+
+model ProjectInvite {
+  id            String   @id @default(uuid())
+
+  projectId     String   @map("project_id")
+  email         String
+  invitedById   String   @map("invited_by_id")
+  role          ProjectRole
+
+  status        InviteStatus @default(PENDING)
+
+  expiresAt     DateTime
+  acceptedAt    DateTime?
+
+  invitedUserId String?  @map("invited_user_id")
+
+  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  invitedBy     User     @relation("InvitedById",fields: [invitedById], references: [id], onDelete: Cascade)
+  invitedUser   User?    @relation("InvitedUser", fields: [invitedUserId], references: [id])
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([projectId, email])
+  @@map("project_invite")
 }

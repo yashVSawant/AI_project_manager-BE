@@ -25,10 +25,13 @@ export class ProjectRoleGuard implements CanActivate {
     if (!requiredRoles) return true;
 
     const request = context.switchToHttp().getRequest();
-    const userId = request.user.id;
+    const userId = request.user.userId;
 
-    const componentId = request.params.id;
+    let projectId = request.params.projectId;
 
+    if(!projectId){
+    let componentId = request.params.id;
+      if(!componentId) componentId = request.params.componentId
     // 1. get projectId from component
     const component = await this.prisma.component.findUnique({
       where: { id: componentId },
@@ -36,12 +39,14 @@ export class ProjectRoleGuard implements CanActivate {
     });
 
     if (!component) throw new ForbiddenException('Component not found');
+    projectId=  component.projectId
+  }
 
     // 2. get user role
     const membership = await this.prisma.projectMember.findUnique({
       where: {
         projectId_userId: {
-          projectId: component.projectId,
+          projectId: projectId,
           userId,
         },
       },

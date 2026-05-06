@@ -38,13 +38,19 @@ export class AuthService {
     const salt = await bcrypt.genSalt(saltRound);
     const hashPassword = await bcrypt.hash(password, salt);
 
-   const user = await this.prisma.user.create({
+   const user= await this.prisma.user.create({
       data: {
         email,
         password: hashPassword,
         name,
       },
     });
+    await this.prisma.projectInvite.updateMany({
+      where:{email},
+      data:{
+        invitedUserId:user.id
+      }
+    })
     return this.login(user)
   }
 

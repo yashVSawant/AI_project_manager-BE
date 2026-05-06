@@ -5,6 +5,7 @@ import {
   Delete,
   Get,
   Param,
+  Patch,
   Post,
   Req,
 } from '@nestjs/common';
@@ -17,7 +18,7 @@ export class ProjectController {
   constructor(private readonly projectService: ProjectService) {}
 
   @Post('generate')
-  async generate(@Body() dto: GenerateProjectDto, @Req() req) {
+  async generate(@Body() dto: GenerateProjectDto, @Req() req:any) {
     return this.projectService.generateProject(dto.message, req.user.userId);
   }
 
@@ -34,13 +35,37 @@ export class ProjectController {
 
   @ProjectAccess('ADMIN', 'EDITOR')
   @Delete(':projectId')
-  async deleteProject(@Param('projectId') projectId){
+  async deleteProject(@Param('projectId') projectId:string){
     return this.projectService.deleteProject(projectId )
   }
   
   @ProjectAccess('ADMIN', 'EDITOR')
   @Delete('component/:componentId')
-  async deleteComponent(@Param('componentId') componentId){
+  async deleteComponent(@Param('componentId') componentId:string){
     return this.projectService.deleteComponent(componentId)
+  }
+
+  @ProjectAccess('ADMIN', 'EDITOR')
+  @Patch('description/:componentId')
+  async editDescription(@Param('componentId') componentId:string , @Body('description') description:string){
+    return this.projectService.updateDescription(componentId , description)
+  }
+
+  @ProjectAccess('ADMIN', 'EDITOR')
+  @Delete('description/:componentId')
+  async deleteDescription(@Param('componentId') componentId:string){
+    return this.projectService.deleteDescription(componentId)
+  }
+
+  @ProjectAccess('ADMIN', 'EDITOR')
+  @Patch('description/:componentId')
+  async editRules(@Param('componentId') componentId:string , @Body('rule') rule:string){
+    return this.projectService.updateRules(componentId , rule)
+  }
+
+  @ProjectAccess('ADMIN', 'EDITOR')
+  @Delete('description/:componentId')
+  async deleteRules(@Param('componentId') componentId:string){
+    return this.projectService.deleteRules(componentId)
   }
 }

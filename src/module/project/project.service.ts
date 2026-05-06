@@ -321,4 +321,48 @@ export class ProjectService {
     })
   }
   async updateComponent() {}
+
+  async updateDescription(componentId:string , description:string){
+    await this.prisma.component.update({
+      where:{
+        id:componentId
+      },
+      data:{
+        description:description
+      }
+    })
+  }
+
+  async deleteDescription(componentId:string ){
+    await this.prisma.component.update({
+      where:{
+        id:componentId
+      },
+      data:{
+        description:null
+      }
+    })
+  }
+
+  async updateRules(componentId:string , rules:string){
+    await this.prisma.component.update({
+      where:{
+        id:componentId
+      },
+      data:{
+        rules
+      }
+    })
+  }
+
+  async deleteRules(componentId:string ){
+    await this.prisma.component.update({
+      where:{
+        id:componentId
+      },
+      data:{
+        rules:null
+      }
+    })
+  }
 }
