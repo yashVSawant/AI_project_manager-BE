@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsNotEmpty, IsObject, IsOptional, IsString } from 'class-validator';
 
 export class ProjectDto {
   @IsNotEmpty()
@@ -8,4 +8,18 @@ export class ProjectDto {
   @IsOptional()
   @IsString()
   description: string;
+}
+
+export class EditCompontent {
+  @IsNotEmpty()
+  @IsString()
+  promt:string
+
+  @IsNotEmpty()
+  @IsString()
+  componentId:string
+
+  @IsObject()
+  @IsNotEmpty()
+  componentTree:any
 }

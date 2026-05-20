@@ -124,7 +124,7 @@ async getInvites(userId:string){
     });
 }
 
-async getProjectInvitedUsersAndOwner(projectId:string){
+async getProjectInvitedUsersAndOwner(projectId:string , userId:string){
     const [invitedUser , owner] =await Promise.all([ this.prisma.projectInvite.findMany({
         where:{
             projectId
@@ -148,7 +148,7 @@ async getProjectInvitedUsersAndOwner(projectId:string){
                     email:true,
                     name:true
                 }
-            }
+            },
         }
     })
 ]);
@@ -158,6 +158,8 @@ return [{role:'admin', isOwner:true, name :owner.user.name , email:owner.user.em
         ...iu,
         invitedUser:undefined,
         name:iu.invitedUser?.name,
+        isSelf:iu.invitedUserId === userId
+
     }
 })]
 }
@@ -185,7 +187,7 @@ async removeUserFromProject(inviteId:string , projectId:string ,adminId:string )
         throw new BadRequestException('Owner can not be removed!')
     }
     if(invite.invitedUserId === adminId){
-        throw new BadRequestException("Can not remove self user!")
+        throw new BadRequestException("Can not remove yourself!")
     }
 
     await this.prisma.$transaction(async (prisma)=>{

@@ -12,6 +12,9 @@ import {
 import { GenerateProjectDto } from './dto/generateProject.dto';
 import { ProjectService } from './project.service';
 import { ProjectAccess } from '../../common/decorators/project-access.decorator';
+import { EditCompontent } from './dto/project.dto';
+import { ComponentDto } from './component.dto';
+import { ComponentConditionDto, conditionDto } from './dto/condition.dto';
 
 @Controller('project')
 export class ProjectController {
@@ -19,7 +22,7 @@ export class ProjectController {
 
   @Post('generate')
   async generate(@Body() dto: GenerateProjectDto, @Req() req:any) {
-    return this.projectService.generateProject(dto.message, req.user.userId);
+    return this.projectService.generateProject(dto.promt, req.user.userId);
   }
 
   @Get(':id')
@@ -67,5 +70,17 @@ export class ProjectController {
   @Delete('description/:componentId')
   async deleteRules(@Param('componentId') componentId:string){
     return this.projectService.deleteRules(componentId)
+  }
+
+  @ProjectAccess('ADMIN', 'EDITOR')
+  @Post('generate/:componentId')
+  async editProjectComponent(@Body() body:EditCompontent){
+    return this.projectService.editProjectComponent(body.promt,body.componentId, body.componentTree)
+  }
+
+  @ProjectAccess('ADMIN','EDITOR')
+  @Post(':projectId/:componentId')
+  async updateComponents(@Body() body :{components:ComponentDto[] , conditions:conditionDto[] ,componentConditions:ComponentConditionDto[]} , @Param('componentId') componentId:string , @Req() req:any ){
+    return this.projectService.updateComponents(body ,componentId ,req.user.userId)
   }
 }
