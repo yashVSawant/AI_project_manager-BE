@@ -1,0 +1,14 @@
+services:
+
+  backend:
+    build: .
+
+    container_name: ai-project-maker-backend
+
+    ports:
+      - "3000:3000"
+
+    env_file:
+      - .env
+
+    restart: always

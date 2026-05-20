@@ -24,8 +24,8 @@ export class InviteController{
     }
 
     @Get('list/:projectId')
-    projectUsers(@Param('projectId') projectId:string ){
-        return this.inviteService.getProjectInvitedUsersAndOwner(projectId)
+    projectUsers(@Param('projectId') projectId:string ,@Req() req:any ){
+        return this.inviteService.getProjectInvitedUsersAndOwner(projectId ,req.user.userId)
     }
 
     @Post('accept/:inviteId')

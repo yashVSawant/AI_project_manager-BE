@@ -5,60 +5,7 @@ import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
 type Role = 'user' | 'system';
 
-@Injectable()
-export class AiService {
-  private openai: OpenAI;
-
-  constructor(private configService: ConfigService) {
-    // this.openai = new OpenAI({
-    //   apiKey: this.configService.get<string>("OPENAI_API_KEY"),
-    // });
-
-    this.openai = new OpenAI({
-      baseURL: 'https://openrouter.ai/api/v1',
-      apiKey: this.configService.get<string>('OPENAI_API_KEY'),
-      // defaultHeaders: {
-      //   'HTTP-Referer': '<YOUR_SITE_URL>', // Optional. Site URL for rankings on openrouter.ai.
-      //   'X-OpenRouter-Title': '<YOUR_SITE_NAME>', // Optional. Site title for rankings on openrouter.ai.
-      // },
-    });
-  }
-
-  async callAiApi(
-    messages: { role: Role; content: string }[],
-    response_format?: any,
-  ) {
-    return await this.openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages,
-      response_format,
-    });
-  }
-
-  async generateProject(input: string, userId: string) {
-    const messages: { role: Role; content: string }[] = [
-      {
-        role: 'system',
-        content: `
-        You are a senior frontend + backend architect.
-
-        You MUST follow:
-
-          1. Minimum 15–25 components
-          2. At least 3 levels of nesting (parent → child → grandchild)
-          3. Each section must contain multiple child components
-          4. Forms MUST include:
-            - labels
-            - inputs
-            - buttons
-          5. Layout MUST include:
-            - header
-            - main section
-            - footer
-          6. Avoid shallow structures (like only 5–6 components)
-          7. Expand UI like a real production app
-
-        Follow these STRICT rules:
+const strictRules = `Follow these STRICT rules:
         1. "components.tag" MUST be valid HTML tag and cannot be undefined , null or empty
         2. "components.className" MUST be valid CSS classes 
           - Use ONLY Tailwind classes (e.g., "flex", "p-4", "m-2", "bg-white", "text-sm", "rounded-lg").
@@ -89,7 +36,62 @@ export class AiService {
         - No duplicates within same parent
         - Defines visual order (top → bottom / left → right)
 
-        Return ONLY JSON.
+        Return ONLY JSON.`
+
+@Injectable()
+export class AiService {
+  private openai: OpenAI;
+
+  constructor(private configService: ConfigService) {
+    // this.openai = new OpenAI({
+    //   apiKey: this.configService.get<string>("OPENAI_API_KEY"),
+    // });
+
+    this.openai = new OpenAI({
+      baseURL: 'https://openrouter.ai/api/v1',
+      apiKey: this.configService.get<string>('OPENAI_API_KEY'),
+      // defaultHeaders: {
+      //   'HTTP-Referer': '<YOUR_SITE_URL>', // Optional. Site URL for rankings on openrouter.ai.
+      //   'X-OpenRouter-Title': '<YOUR_SITE_NAME>', // Optional. Site title for rankings on openrouter.ai.
+      // },
+    });
+  }
+
+  async callAiApi(
+    messages: { role: Role; content: string }[],
+    response_format?: any,
+  ) {
+    return await this.openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages,
+      response_format,
+    });
+  }
+
+  async generateProject(input: string) {
+    const messages: { role: Role; content: string }[] = [
+      {
+        role: 'system',
+        content: `
+        You are a senior frontend + backend architect.
+
+        You MUST follow:
+
+          1. Minimum 15–25 components
+          2. At least 3 levels of nesting (parent → child → grandchild)
+          3. Each section must contain multiple child components
+          4. Forms MUST include:
+            - labels
+            - inputs
+            - buttons
+          5. Layout MUST include:
+            - header
+            - main section
+            - footer
+          6. Avoid shallow structures (like only 5–6 components)
+          7. Expand UI like a real production app
+
+        ${strictRules}
         `,
       },
       {
@@ -201,5 +203,137 @@ export class AiService {
     return JSON.parse(raw);
   }
 
-  async updateProjectComponents() {}
+  async editComponent(input: string, componentTree: any) {
+  const messages: { role: Role; content: string }[] = [
+    {
+      role: 'system',
+      content: `
+      You are a senior frontend architect.
+
+      You are EDITING an existing component subtree.
+
+      Rules:
+      1. Maintain valid structure
+      2. You can modify, add, remove children
+      3. Keep hierarchy meaningful
+      4. Generate realistic UI
+      5. Follow Tailwind class rules strictly
+      6. Maintain proper nesting (min 2 levels if possible)
+      7. Do NOT return full project
+      8. ONLY return updated subtree
+      9. always return updated root component and make it's parent it null even if nothing is updated for root component
+
+      IMPORTANT:
+      - Root component represents selected component
+      - You MAY change its children
+      - You MAY enhance styles/layout
+      - root component should be return with parent it null
+      - this is root component's data ${componentTree}
+      
+      ${strictRules}
+      `,
+    },
+    {
+      role: 'user',
+      content: `
+      Current component tree:
+      ${JSON.stringify(componentTree)}
+
+      User request:
+      "${input}"
+
+      Return ONLY JSON with:
+      {
+        components: [],
+        conditions: [],
+        componentConditions: []
+      }
+      `,
+    },
+  ];
+
+  const response = await this.callAiApi(messages, {
+    type: 'json_schema',
+    json_schema: {
+      name: 'edit_component_schema',
+      schema: {
+        type: 'object',
+        properties: {
+          components: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  id: { type: 'string' },
+                  tag: {
+                    type: 'string',
+                    enum: [
+                      'div',
+                      'button',
+                      'input',
+                      'form',
+                      'section',
+                      'table',
+                      'header',
+                      'footer',
+                      'label',
+                      'h1',
+                      'h2',
+                      'h3',
+                      'h4',
+                      'h5',
+                      'h6',
+                    ],
+                  },
+                  description: { type: 'string' },
+                  className: { type: 'string' },
+                  parentId: { type: ['string', 'null'] },
+                  text: { type: 'string' },
+                  rules: { type: 'string' },
+                  onActiveComponentId: { type: ['string', 'null'] },
+                  activeClassName: { type: 'string' },
+                  order: { type: 'number' },
+                },
+                required: ['id', 'tag', 'className', 'parentId', 'order'],
+              },
+            },
+
+            conditions: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  id: { type: 'string' },
+                  rule: { type: 'string' },
+                },
+                required: ['id', 'rule'],
+              },
+            },
+
+            componentConditions: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  conditionId: { type: 'string' },
+                  componentId: { type: 'string' },
+                  action: {
+                    type: 'string',
+                    enum: ['HIDDEN', 'DISABLED'],
+                  },
+                },
+                required: ['conditionId', 'componentId', 'action'],
+              },
+            },
+        },
+        required: ['components'],
+      },
+    },
+  });
+
+  const raw = response.choices[0].message.content;
+  if (!raw) throw new Error('AI failed');
+
+  return JSON.parse(raw);
+}
 }

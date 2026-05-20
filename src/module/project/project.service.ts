@@ -8,6 +8,7 @@ import { AiService } from '../ai/ai.service';
 import { v4 as uuid } from 'uuid';
 import { BadRequestError } from 'openai';
 import { text } from 'node:stream/consumers';
+import { buildComponentTree } from '../../core/help';
 
 @Injectable()
 export class ProjectService {
@@ -16,9 +17,9 @@ export class ProjectService {
     private prisma: PrismaService,
   ) {}
 
-  async generateProject(input: string, userId: string) {
+  async generateProject(promt: string, userId: string) {
     if (!userId) throw new BadRequestException('userId is required!');
-    const aiData = await this.aiService.generateProject(input, userId);
+    const aiData = await this.aiService.generateProject(promt);
     console.log(aiData);
     return await this.prisma.$transaction(async (tx) => {
       // ✅ 1. Create Project
@@ -270,9 +271,9 @@ export class ProjectService {
     })
   }
 
-  async deleteComponent(componentId:string){
+  async deleteComponent(componentId:string ,prisma :PrismaDto.TransactionClient = this.prisma){
       const componentIds = await this.getSubtreeIds(componentId)
-        await this.prisma.component.updateMany({
+        await prisma.component.updateMany({
         where:{
           id:{in:componentIds}
         },
@@ -320,7 +321,6 @@ export class ProjectService {
       }
     })
   }
-  async updateComponent() {}
 
   async updateDescription(componentId:string , description:string){
     await this.prisma.component.update({
@@ -364,5 +364,130 @@ export class ProjectService {
         rules:null
       }
     })
+  }
+
+  async editProjectComponent(
+  promt: string,
+  componentId: string,
+  componentTree:any,
+) {
+  const component = await this.prisma.component.findUniqueOrThrow({
+    where:{
+      id:componentId
+    }
+  })
+  const aiData = await this.aiService.editComponent(promt, componentTree);
+
+  // ✅ ID maps
+  const componentMap = new Map<string, string>();
+  const conditionMap = new Map<string, string>();
+
+  aiData.components.forEach((c) => {
+    componentMap.set(c.id, uuid());
+  });
+
+  aiData.conditions?.forEach((c) => {
+    conditionMap.set(c.id, uuid());
+  });
+
+  // ✅ map components
+  const mappedComponents = aiData.components.map((c) => ({
+    ...c,
+    id: componentMap.get(c.id),
+    type: c.tag,
+    parentId: c.parentId ? componentMap.get(c.parentId) : component.parentId,
+  }));
+
+  // ✅ map conditions
+  const mappedConditions = (aiData.conditions || []).map((c) => ({
+    ...c,
+    id: conditionMap.get(c.id),
+  }));
+
+  // ✅ map componentConditions
+  const mappedComponentConditions = (aiData.componentConditions || []).map(
+    (cc) => ({
+      ...cc,
+      conditionId: conditionMap.get(cc.conditionId),
+      componentId: componentMap.get(cc.componentId),
+    }),
+  );
+
+  // ✅ build tree (same as your getProject)
+  const tree = buildComponentTree(mappedComponents, mappedComponentConditions);
+
+  return {
+    components: mappedComponents,
+    conditions: mappedConditions,
+    componentConditions: mappedComponentConditions,
+    tree, // 🔥 important for FE preview
+  };
+}
+
+async updateComponents(dto:{components:ComponentDto[] , conditions:conditionDto[] ,componentConditions:ComponentConditionDto[]} , componentId:string ,userId:string) {
+    // ✅ 2. Build ID Maps
+      const componentMap = new Map<string, string>();
+      const conditionMap = new Map<string, string>();
+
+      const component = await this.prisma.component.findUniqueOrThrow({
+        where:{id:componentId},
+        select:{
+          projectId:true,
+          parentId:true
+        }
+      })
+
+      dto.components.forEach((c) => {
+        c.id && componentMap.set(c.id, uuid());
+      });
+
+      dto.conditions?.forEach((c) => {
+        c.id && conditionMap.set(c.id, uuid());
+      });
+
+      await this.prisma.$transaction(async(tx)=>{
+
+      // ✅ 3. Insert Components
+      await this.createComponents(
+        dto.components.map((c) => ({
+          ...c,
+          id: c.id && componentMap.get(c.id),
+          type: c.type,
+          className: c.className,
+          description: c.description,
+          parentId: c.parentId ? componentMap.get(c.parentId) : component.parentId||undefined,
+          text: c.text,
+          rules: c.rules,
+          onActiveComponentId: c.onActiveComponentId,
+          activeClassName: c.activeClassName,
+        })),
+        component.projectId,
+        userId,
+        tx,
+      );
+
+      // ✅ 4. Insert Conditions
+      await this.createConditions(
+        (dto.conditions || []).map((c) => ({
+          ...c,
+          id: c.id && conditionMap.get(c.id),
+          rule: c.rule,
+        })),
+        component.projectId,
+        tx,
+      );
+
+      // ✅ 5. Insert ComponentConditions
+      await this.createComponentCondition(
+        (dto.componentConditions || []).map((cc) => ({
+          ...cc,
+          conditionId:  conditionMap.get(cc.conditionId) ||"",
+          componentId:  componentMap.get(cc.componentId) ||"",
+          action: cc.action,
+        })),
+        tx,
+      );
+      await this.deleteComponent(componentId , tx)
+      })
   }
 }
