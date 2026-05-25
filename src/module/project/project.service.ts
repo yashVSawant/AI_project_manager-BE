@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ProjectDto } from './dto/project.dto';
-import { PrismaClient, Prisma as PrismaDto, ProjectRole } from '../../../generated/prisma/client';
+import { ConditionAction, PrismaClient, Prisma as PrismaDto, ProjectRole } from '../../../generated/prisma/client';
 import { ComponentDto } from './component.dto';
 import { ComponentConditionDto, conditionDto } from './dto/condition.dto';
 import { AiService } from '../ai/ai.service';
@@ -489,5 +489,84 @@ async updateComponents(dto:{components:ComponentDto[] , conditions:conditionDto[
       );
       await this.deleteComponent(componentId , tx)
       })
+  }
+
+  async updateComponentManually(dto:ComponentDto  , componentId:string ) {
+    return await this.prisma.$transaction(async(tx)=>{
+      // ✅ 1. Update Component
+      await this.prisma.component.update({
+        where: { id: componentId },
+        data: {
+          ...dto,
+        }
+      });
+    });
+  }
+
+  async updateOrAddComponetConditions(conditions:conditionDto , action:ConditionAction , componentId:string ){
+    const component = await this.prisma.component.findUniqueOrThrow({
+      where:{id:componentId},
+      select:{
+        projectId:true,
+      }
+    })
+    await this.prisma.$transaction(async(tx)=>{
+      const existing = await this.prisma.condition.upsert({
+        where:{
+          id:conditions.id
+        },
+        create:{
+          ...conditions,
+          projectId:component.projectId
+        },
+        update:{
+          ...conditions,
+        }
+      })
+
+      const componentCondition = await this.prisma.componentCondition.findFirst({
+        where:{
+          componentId,
+          conditionId:existing.id
+        }
+      })
+      if(componentCondition){
+        await this.prisma.componentCondition.update({
+          where:{
+            id:componentCondition.id
+          },
+          data:{
+            conditionId:existing.id,
+            componentId,
+            action:action,
+          }
+        })
+      } else {
+        await this.prisma.componentCondition.create({
+          data:{
+            conditionId:existing.id,
+            componentId,
+            action:action,
+          }
+        })
+      }
+      
+    })
+  }
+
+  async getComponent(componentId:string){
+    return await this.prisma.component.findUniqueOrThrow({
+      where:{
+        id:componentId
+      },
+      include:{
+        componentConditions:{
+          include:{
+            condition:true
+          }
+        },
+
+      }
+    })
   }
 }
