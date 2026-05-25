@@ -15,6 +15,7 @@ import { ProjectAccess } from '../../common/decorators/project-access.decorator'
 import { EditCompontent } from './dto/project.dto';
 import { ComponentDto } from './component.dto';
 import { ComponentConditionDto, conditionDto } from './dto/condition.dto';
+import { ConditionAction } from '../../../generated/prisma/enums';
 
 @Controller('project')
 export class ProjectController {
@@ -40,6 +41,11 @@ export class ProjectController {
   @Delete(':projectId')
   async deleteProject(@Param('projectId') projectId:string){
     return this.projectService.deleteProject(projectId )
+  }
+
+  @Get('component/:componentId')
+  async getComponent(@Param('componentId') componentId:string){
+    return this.projectService.getComponent(componentId)
   }
   
   @ProjectAccess('ADMIN', 'EDITOR')
@@ -82,5 +88,17 @@ export class ProjectController {
   @Post(':projectId/:componentId')
   async updateComponents(@Body() body :{components:ComponentDto[] , conditions:conditionDto[] ,componentConditions:ComponentConditionDto[]} , @Param('componentId') componentId:string , @Req() req:any ){
     return this.projectService.updateComponents(body ,componentId ,req.user.userId)
+  }
+
+  @ProjectAccess('ADMIN','EDITOR')
+  @Post(':projectId/:componentId/manual')
+  async updateComponentManually(@Body() body :ComponentDto  , @Param('componentId') componentId:string ){
+    return this.projectService.updateComponentManually(body ,componentId )
+  }
+
+  @ProjectAccess('ADMIN','EDITOR')
+  @Post(':projectId/:componentId/condition')
+  async updateOrAddComponetConditions(@Body() body :{condition:conditionDto ,action:ConditionAction } , @Param('componentId') componentId:string  ){
+    return this.projectService.updateOrAddComponetConditions(body.condition, body.action ,componentId)
   }
 }
