@@ -229,6 +229,7 @@ export class AiService {
       - You MAY enhance styles/layout
       - root component should be return with parent it null
       - this is root component's data ${componentTree}
+      - return array of components , conditions and componentConditions  
       
       ${strictRules}
       `,

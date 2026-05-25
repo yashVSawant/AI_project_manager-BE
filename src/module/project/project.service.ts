@@ -36,7 +36,7 @@ export class ProjectService {
       const componentMap = new Map<string, string>();
       const conditionMap = new Map<string, string>();
 
-      aiData.components.forEach((c) => {
+      aiData.components?.forEach((c) => {
         componentMap.set(c.id, uuid());
       });
 
@@ -46,7 +46,7 @@ export class ProjectService {
 
       // ✅ 3. Insert Components
       await this.createComponents(
-        aiData.components.map((c) => ({
+        aiData.components?.map((c) => ({
           ...c,
           id: componentMap.get(c.id),
           type: c.tag,
