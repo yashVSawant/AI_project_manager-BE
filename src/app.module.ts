@@ -11,6 +11,7 @@ import { JwtAuthGuard } from './module/auth/guards/jwt-auth.guard';
 import { ProjectModule } from './module/project/project.module';
 import { ResendEmailModule } from './module/resend-email/resendEmail.module';
 import { InviteModule } from './module/invite/invite.module';
+import { UserModule } from './module/user/user.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { InviteModule } from './module/invite/invite.module';
     ProjectModule,
     InviteModule,
     ResendEmailModule,
+    UserModule
   ],
   controllers: [AppController],
   providers: [
